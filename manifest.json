@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Activity Tracker",
+  "version": "1.0.0",
+  "description": "Minimal Chrome extension with background service worker and activity tracking content script.",
+  "permissions": [
+    "storage",
+    "identity",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": ["<all_urls>"]
+}
