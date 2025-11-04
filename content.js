@@ -1,20 +1,27 @@
-const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
-let activityTimeoutId = null;
-const ACTIVITY_DEBOUNCE_MS = 1000;
+const ACTIVITY_EVENTS = {
+  mouse: ['mousemove', 'mousedown'],
+  keyboard: ['keydown', 'keyup']
+};
+const MIN_REPORT_INTERVAL_MS = 5000;
+let lastReportedAt = 0;
 
 function reportActivity() {
+  const now = Date.now();
+  if (now - lastReportedAt < MIN_REPORT_INTERVAL_MS) {
+    return;
+  }
+
+  lastReportedAt = now;
+
   chrome.runtime.sendMessage({ type: 'user-activity' }).catch((error) => {
     console.error('Failed to report user activity', error);
   });
 }
 
-function scheduleActivityReport() {
-  if (activityTimeoutId) {
-    clearTimeout(activityTimeoutId);
-  }
-  activityTimeoutId = setTimeout(reportActivity, ACTIVITY_DEBOUNCE_MS);
+for (const eventName of ACTIVITY_EVENTS.mouse) {
+  window.addEventListener(eventName, reportActivity, { passive: true });
 }
 
-for (const eventName of ACTIVITY_EVENTS) {
-  window.addEventListener(eventName, scheduleActivityReport, { passive: true });
+for (const eventName of ACTIVITY_EVENTS.keyboard) {
+  window.addEventListener(eventName, reportActivity, { passive: false });
 }

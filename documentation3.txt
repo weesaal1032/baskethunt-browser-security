@@ -1,0 +1,16 @@
+# Content Script Activity Reporting
+
+## Overview
+The `content.js` script listens for keyboard and mouse activity across every page the extension is injected into. It throttles messages to the background service worker so that a user activity update is sent at most once every five seconds.
+
+## Event Coverage
+- **Mouse**: `mousemove` and `mousedown` events are monitored to capture pointer movement and clicks.
+- **Keyboard**: `keydown` and `keyup` events ensure typing and key navigation are detected.
+
+## Message Flow
+1. When any monitored event fires, `reportActivity` checks if at least five seconds have elapsed since the previous report.
+2. If the threshold is met, the script sends `{ type: 'user-activity' }` via `chrome.runtime.sendMessage`.
+3. `background.js` receives the message through `chrome.runtime.onMessage` and resets the inactivity alarm, keeping the inactivity timer synchronized with user actions.
+
+## Error Handling
+All message sends are wrapped in a `.catch` to surface issues in the developer console without disrupting the throttling logic.
