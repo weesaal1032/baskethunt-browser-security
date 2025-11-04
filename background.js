@@ -8,6 +8,45 @@ const DEFAULT_LOCK_STATE = {
 };
 
 let lockState = { ...DEFAULT_LOCK_STATE };
+let pendingSetupTab = null;
+
+async function getStoredTotpSecret() {
+  try {
+    const { totpSecret } = await chrome.storage.local.get('totpSecret');
+    if (typeof totpSecret === 'string' && totpSecret.trim()) {
+      return totpSecret.trim();
+    }
+  } catch (error) {
+    console.error('Failed to read stored TOTP secret', error);
+  }
+  return null;
+}
+
+async function openSetupTab() {
+  if (pendingSetupTab) {
+    return pendingSetupTab;
+  }
+
+  pendingSetupTab = chrome.tabs
+    .create({ url: chrome.runtime.getURL('setup.html') })
+    .catch((error) => {
+      console.error('Unable to open setup page', error);
+    })
+    .finally(() => {
+      pendingSetupTab = null;
+    });
+
+  return pendingSetupTab;
+}
+
+async function ensureTotpSecretPresent() {
+  const secret = await getStoredTotpSecret();
+  if (!secret) {
+    await openSetupTab();
+    return false;
+  }
+  return true;
+}
 
 async function persistLockState() {
   await chrome.storage.session.set({ lockState });
@@ -124,18 +163,28 @@ async function unlockSession() {
 }
 
 loadLockState()
-  .then(() => {
-    if (!lockState.isLocked) {
-      return scheduleInactivityTimer();
+  .then(async () => {
+    const hasSecret = await ensureTotpSecretPresent();
+    if (!hasSecret) {
+      return;
     }
-    return undefined;
+    if (!lockState.isLocked) {
+      await scheduleInactivityTimer();
+    }
   })
   .catch((error) => {
     console.error('Failed to restore lock state', error);
   });
 
-chrome.runtime.onInstalled.addListener(() => {
-  scheduleInactivityTimer();
+chrome.runtime.onInstalled.addListener((details) => {
+  (async () => {
+    const hasSecret = await ensureTotpSecretPresent();
+    if (hasSecret || details.reason !== chrome.runtime.OnInstalledReason.INSTALL) {
+      await scheduleInactivityTimer();
+    }
+  })().catch((error) => {
+    console.error('Failed during onInstalled handling', error);
+  });
 });
 
 chrome.runtime.onStartup?.addListener(() => {
@@ -204,6 +253,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'user-activity') {
     scheduleInactivityTimer();
     return false;
+  }
+
+  if (message.type === 'totp-setup-complete') {
+    (async () => {
+      if (!lockState.isLocked) {
+        await scheduleInactivityTimer();
+      }
+      sendResponse({ success: true });
+    })().catch((error) => {
+      console.error('Failed to schedule after setup completion', error);
+      sendResponse({ success: false, error: 'schedule_failed' });
+    });
+    return true;
   }
 
   if (message.type === 'lockscreen-unlocked') {

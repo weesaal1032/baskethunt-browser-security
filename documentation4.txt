@@ -9,7 +9,7 @@ The lockscreen is delivered through `lockscreen.html`, a full-screen overlay tha
 - An error message placeholder communicates validation failures without leaving the page.
 
 ## Validation Flow
-1. `lockscreen.js` converts the shared Base32 secret into bytes and derives a standard 6-digit TOTP using the browser crypto APIs.
+1. `lockscreen.js` retrieves the Base32 secret from `chrome.storage.local`, converts it into bytes, and derives a standard 6-digit TOTP using the browser crypto APIs. If the secret is missing (setup not yet completed), the form is disabled and an administrator prompt is displayed.
 2. Submitted codes are checked against the current time step with a ±30-second tolerance window to absorb minor clock drift.
 3. When the value matches, the overlay element is removed, restoring access to the underlying tab. Invalid codes trigger an inline error and reselect the input field.
 

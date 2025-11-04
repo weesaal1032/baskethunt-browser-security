@@ -2,10 +2,10 @@
 
 ## Overview
 - Integrates the open-source `jsOTP` library (MIT-licensed) via a local ESM wrapper to handle Time-based One-Time Password (TOTP) generation and verification inside the lockscreen service worker context.
-- Uses a hardcoded base32 secret (`JBSWY3DPEHPK3PXP`) strictly for testing; production deployments must provision a per-user secret securely.
+- Relies on a per-install Base32 secret stored in `chrome.storage.local`, provisioned through the guided setup experience (`setup.html`).
 
 ## Validation Flow
-1. `lockscreen.js` imports the `TOTP` helper from `vendor/jsotp.js` and configures it for 6-digit codes with a 30-second step and a ±1 window to tolerate limited clock drift.
+1. `lockscreen.js` imports the `TOTP` helper from `vendor/jsotp.js`, fetches the stored secret at startup, and configures verification for 6-digit codes with a 30-second step and a ±1 window to tolerate limited clock drift.
 2. Upon submit, the script trims the user-provided code and calls `totp.verify`, which:
    - Decodes the base32 secret,
    - Derives the moving counter based on the current timestamp and configured period,
@@ -15,5 +15,5 @@
 4. Any unexpected errors (e.g., malformed secret or Web Crypto issues) are logged to the console and communicated to the user via a generic support message, preventing silent bypasses.
 
 ## Testing Notes
-- Manual verification should include generating valid TOTP codes (e.g., using an authenticator app seeded with the shared secret) to confirm unlock success and ensuring incorrect or expired codes keep the overlay present.
+- Manual verification should include generating valid TOTP codes (e.g., using an authenticator app seeded via `setup.html`) to confirm unlock success and ensuring incorrect or expired codes keep the overlay present.
 - Because the overlay remains attached until `totp.verify` resolves truthy, there is no bypass path without knowledge of the valid TOTP code.

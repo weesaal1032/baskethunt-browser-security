@@ -1,14 +1,33 @@
 import { TOTP } from './vendor/jsotp.js';
 
-const SHARED_SECRET = 'JBSWY3DPEHPK3PXP';
 const totp = new TOTP({ digits: 6, period: 30, window: 1 });
+let sharedSecret = null;
+
+function normalizeSecret(secret) {
+  return secret.replace(/\s+/g, '').toUpperCase();
+}
+
+async function loadSharedSecret() {
+  try {
+    const { totpSecret } = await chrome.storage.local.get('totpSecret');
+    if (typeof totpSecret === 'string' && totpSecret.trim()) {
+      sharedSecret = normalizeSecret(totpSecret);
+    }
+  } catch (error) {
+    console.error('Failed to load stored TOTP secret', error);
+  }
+}
 
 async function validateCode(inputValue) {
+  if (!sharedSecret) {
+    throw new Error('missing_secret');
+  }
+
   try {
-    return await totp.verify(inputValue.trim(), SHARED_SECRET);
+    return await totp.verify(inputValue.trim(), sharedSecret);
   } catch (error) {
     console.error('TOTP validation failed', error);
-    throw new Error('Validation error');
+    throw new Error('validation_error');
   }
 }
 
@@ -66,7 +85,13 @@ async function handleSubmit(event) {
       return;
     }
   } catch (err) {
-    error.textContent = 'Unable to validate code. Please contact support.';
+    if (err.message === 'missing_secret') {
+      error.textContent = 'No TOTP secret is configured. Please contact your administrator.';
+      input.disabled = true;
+      submitButton.disabled = true;
+    } else {
+      error.textContent = 'Unable to validate code. Please contact support.';
+    }
     input.focus();
   } finally {
     if (!unlocked) {
@@ -96,14 +121,27 @@ function trapFocus(event) {
   }
 }
 
-function initLockscreen() {
+async function initLockscreen() {
   const form = document.getElementById('lockscreen-form');
   const input = document.getElementById('totp-input');
   form.addEventListener('submit', handleSubmit);
   document.addEventListener('keydown', trapFocus);
+  await loadSharedSecret();
+
+  if (!sharedSecret) {
+    const error = document.getElementById('error-message');
+    error.textContent = 'Setup is incomplete. Please finish TOTP setup to unlock.';
+    input.disabled = true;
+    const submitButton = document.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    return;
+  }
+
   requestAnimationFrame(() => {
     input.focus();
   });
 }
 
-initLockscreen();
+initLockscreen().catch((error) => {
+  console.error('Failed to initialize lockscreen', error);
+});
