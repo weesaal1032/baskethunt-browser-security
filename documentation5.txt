@@ -1,0 +1,19 @@
+# documentation5.txt - TOTP validation logic
+
+## Overview
+- Integrates the open-source `jsOTP` library (MIT-licensed) via a local ESM wrapper to handle Time-based One-Time Password (TOTP) generation and verification inside the lockscreen service worker context.
+- Uses a hardcoded base32 secret (`JBSWY3DPEHPK3PXP`) strictly for testing; production deployments must provision a per-user secret securely.
+
+## Validation Flow
+1. `lockscreen.js` imports the `TOTP` helper from `vendor/jsotp.js` and configures it for 6-digit codes with a 30-second step and a ±1 window to tolerate limited clock drift.
+2. Upon submit, the script trims the user-provided code and calls `totp.verify`, which:
+   - Decodes the base32 secret,
+   - Derives the moving counter based on the current timestamp and configured period,
+   - Computes the expected HOTP value using the Web Crypto API for HMAC-SHA1, mirroring the upstream library,
+   - Compares the provided token against the generated values for the current and adjacent time steps.
+3. Successful validation removes the modal overlay and restores access; failures surface an inline error message and keep focus on the input.
+4. Any unexpected errors (e.g., malformed secret or Web Crypto issues) are logged to the console and communicated to the user via a generic support message, preventing silent bypasses.
+
+## Testing Notes
+- Manual verification should include generating valid TOTP codes (e.g., using an authenticator app seeded with the shared secret) to confirm unlock success and ensuring incorrect or expired codes keep the overlay present.
+- Because the overlay remains attached until `totp.verify` resolves truthy, there is no bypass path without knowledge of the valid TOTP code.
