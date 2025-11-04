@@ -1,0 +1,18 @@
+# Lockscreen UI and Logic
+
+## Overview
+The lockscreen is delivered through `lockscreen.html`, a full-screen overlay that blocks all interaction until a valid time-based one-time passcode (TOTP) is provided. The overlay is opened by the background service worker whenever the inactivity alarm fires.
+
+## User Experience
+- A centered card explains that the session is locked and prompts for a six-digit authenticator code.
+- Keyboard focus is trapped inside the form, and the input gains focus immediately to keep the user in the flow.
+- An error message placeholder communicates validation failures without leaving the page.
+
+## Validation Flow
+1. `lockscreen.js` converts the shared Base32 secret into bytes and derives a standard 6-digit TOTP using the browser crypto APIs.
+2. Submitted codes are checked against the current time step with a ±30-second tolerance window to absorb minor clock drift.
+3. When the value matches, the overlay element is removed, restoring access to the underlying tab. Invalid codes trigger an inline error and reselect the input field.
+
+## Security Notes
+- No fallback password exists—the TOTP code is the only unlock mechanism.
+- Failures to verify a code are logged to the console and surfaced to the user for troubleshooting without leaking sensitive details.

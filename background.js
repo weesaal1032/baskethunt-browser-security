@@ -9,7 +9,7 @@ async function resetInactivityTimer() {
 }
 
 async function openLockPage() {
-  const lockUrl = chrome.runtime.getURL('lock.html');
+  const lockUrl = chrome.runtime.getURL('lockscreen.html');
   await chrome.tabs.create({ url: lockUrl });
 }
 
