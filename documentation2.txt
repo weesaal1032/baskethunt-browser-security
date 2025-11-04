@@ -1,0 +1,23 @@
+# Background Timer and Alarm Handling
+
+## Overview
+The background service worker (`background.js`) manages a 3-minute inactivity timeout. It relies on a content script to detect user activity and communicates through runtime messages to keep the timer accurate.
+
+## Timer Lifecycle
+- **Initialization**: On extension install, `scheduleInactivityTimer()` clears any existing alarms and schedules a new `inactivity-lock-alarm` after three minutes.
+- **Tab Activation**: When the user switches tabs (`chrome.tabs.onActivated`), the timer is reset to ensure each active tab restarts the inactivity window.
+- **User Activity**: The content script debounces keyboard and pointer events and sends a `user-activity` message. The background script listens for this message and resets the timer.
+
+## Alarm Handling
+- `chrome.alarms.onAlarm` listens for the `inactivity-lock-alarm` alarm.
+- When triggered, the service worker opens the local `lock.html` page in a new tab to lock the browsing session.
+- Errors encountered while resetting timers or opening the lock page are logged to the console for diagnostic purposes.
+
+## Content Script Collaboration
+- `content.js` registers listeners for mouse and keyboard events.
+- Events are debounced to avoid flooding the service worker with messages.
+- Activity signals are sent via `chrome.runtime.sendMessage` with a `user-activity` payload.
+
+## Permissions Alignment
+- The manifest includes the `tabs` permission to monitor tab activation events and open the lock page.
+- Existing permissions (`storage`, `identity`, `alarms`) remain unchanged to support future identity checks or stored preferences.
