@@ -39,9 +39,20 @@ async function handleSubmit(event) {
     const valid = await validateCode(input.value);
     if (valid) {
       try {
-        await chrome.runtime.sendMessage({ type: 'lockscreen-unlocked' });
-        unlocked = true;
-        window.close();
+        const response = await chrome.runtime.sendMessage({
+          type: 'lockscreen-unlocked',
+        });
+
+        if (response?.success) {
+          unlocked = true;
+          document.removeEventListener('keydown', trapFocus);
+          window.close();
+        } else {
+          console.error('Unlock rejected by background', response);
+          error.textContent = 'Unable to unlock session. Please try again.';
+          input.focus();
+          return;
+        }
       } catch (messageError) {
         console.error('Failed to notify background about unlock', messageError);
         error.textContent = 'Unable to unlock session. Please try again.';
@@ -54,8 +65,6 @@ async function handleSubmit(event) {
       input.focus();
       return;
     }
-
-    document.removeEventListener('keydown', trapFocus);
   } catch (err) {
     error.textContent = 'Unable to validate code. Please contact support.';
     input.focus();

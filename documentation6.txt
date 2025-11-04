@@ -6,6 +6,6 @@
 - Lock state is persisted in `chrome.storage.session`, allowing the service worker to rehydrate and reassert the lock if it restarts while the session is still locked.
 
 ## Unlock Validation and Session Resume
-- The lockscreen form validates 6-digit codes through the jsOTP helper. On success it notifies the background script via `lockscreen-unlocked`.
+- The lockscreen form validates 6-digit codes through the jsOTP helper. On success it notifies the background script via `lockscreen-unlocked`. The background rejects unlock messages that do not originate from the enforced lock tab/URL, preventing spoofed unlock attempts from content scripts or external pages.
 - The background handler only resumes the session after `unlockSession()` successfully clears the lock state, closes the lock tab, and schedules a fresh inactivity alarm. Until this happens, user-activity messages and tab switches do not reset the timer.
 - If the lock tab is force-closed before a valid TOTP is supplied, the background listener recreates it, ensuring the session stays locked until a correct code is entered.

@@ -1,0 +1,20 @@
+# Extension Architecture Overview
+
+## High-Level Behavior
+- The Activity Tracker extension monitors user interaction across all tabs and enforces a lock after three minutes of inactivity.
+- A background service worker manages alarms, persists lock state, and orchestrates the lock/unlock lifecycle using Chrome APIs.
+- A throttled content script emits user-activity heartbeats so the background worker can reset the inactivity timer when appropriate.
+- When the alarm fires, a dedicated lockscreen tab captures focus until a valid time-based one-time passcode (TOTP) is supplied.
+
+## Module Responsibilities
+- `manifest.json`: Declares MV3 metadata, background service worker entry point, global content-script injection, and required permissions (`storage`, `identity`, `alarms`, `tabs`, plus `<all_urls>` host access).
+- `background.js`: Schedules and clears the three-minute inactivity alarm, persists lock metadata in `chrome.storage.session`, enforces that the lock tab stays open/focused, and only unlocks after verifying that a `lockscreen-unlocked` message originates from the lock tab itself.
+- `content.js`: Listens for mouse and keyboard activity on every page, throttles reports to once per five seconds, and forwards `user-activity` messages to the background worker so alarms can be reset when the session is not locked.
+- `lockscreen.html`: Provides the full-screen modal UI with focus trapping, instructional copy, and a secure input flow for the TOTP verification screen.
+- `lockscreen.js`: Imports the local jsOTP helper, validates the 6-digit code against the shared secret, disables UI while verifying, and only closes the lock tab when the background confirms an authorized unlock.
+- `vendor/jsotp.js`: Supplies a minimal, audited TOTP implementation that leverages the Web Crypto API for HMAC generation and supports configurable step windows.
+
+## Security Considerations
+- The lock tab is immediately recreated or refocused if a user tries to close it, switch tabs, or defocus the window while locked, ensuring the lockscreen cannot be bypassed.
+- Unlock attempts are authenticated end-to-end: codes are generated/verified with jsOTP, and background message validation ensures that only the genuine lockscreen can request an unlock.
+- Activity signals do not interfere with the lock once engaged, preventing an attacker from extending the session without passing the TOTP challenge.

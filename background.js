@@ -207,6 +207,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'lockscreen-unlocked') {
+    const lockUrl = chrome.runtime.getURL('lockscreen.html');
+    const senderUrl = sender?.tab?.url ?? sender?.url ?? '';
+    const isFromLockTab =
+      sender?.tab?.id === lockState.lockTabId && senderUrl.startsWith(lockUrl);
+    const isFromLockDocument = !sender?.tab && senderUrl.startsWith(lockUrl);
+
+    if (!isFromLockTab && !isFromLockDocument) {
+      sendResponse({ success: false, error: 'unauthorized_sender' });
+      return false;
+    }
+
+    if (!lockState.isLocked) {
+      sendResponse({ success: false, error: 'not_locked' });
+      return false;
+    }
+
     (async () => {
       await unlockSession();
       sendResponse({ success: true });
