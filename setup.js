@@ -2,10 +2,11 @@ import { TOTP } from './vendor/jsotp.js';
 import { QRCode } from './vendor/qrcode.js';
 
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
-const TOTP_ISSUER = 'BasketHunt Browser Security';
-const OTP_ACCOUNT_LABEL = `${TOTP_ISSUER}:User`;
-const OTPAUTH_URL = `otpauth://totp/${encodeURIComponent(OTP_ACCOUNT_LABEL)}?secret=${TOTP_SECRET}&issuer=${encodeURIComponent(
-  TOTP_ISSUER
+const QR_ACCOUNT_LABEL = 'BH Security';
+const QR_ISSUER = 'BH';
+const QR_MAX_PAYLOAD_BYTES = 62;
+const OTPAUTH_URL = `otpauth://totp/${encodeURIComponent(QR_ACCOUNT_LABEL)}?secret=${TOTP_SECRET}&issuer=${encodeURIComponent(
+  QR_ISSUER
 )}`;
 
 const totp = new TOTP({ digits: 6, period: 30, window: 1 });
@@ -19,8 +20,10 @@ const setupForm = document.getElementById('setup-form');
 function renderQrCode() {
   qrWrapper.innerHTML = '';
 
-  if (OTPAUTH_URL.length > 200) {
-    console.warn('Unable to render QR code: otpauth payload too long', { length: OTPAUTH_URL.length });
+  if (OTPAUTH_URL.length > QR_MAX_PAYLOAD_BYTES) {
+    console.warn('Unable to render QR code: otpauth payload too long for embedded QR support', {
+      length: OTPAUTH_URL.length,
+    });
     const fallback = document.createElement('span');
     fallback.textContent = 'Unable to render QR code. Please try again or enter the code manually.';
     qrWrapper.appendChild(fallback);
