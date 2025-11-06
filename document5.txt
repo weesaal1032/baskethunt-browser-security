@@ -1,0 +1,24 @@
+BasketHunt Browser Security – QR Fix Summary
+===========================================
+
+Issue root cause
+----------------
+The QR generator previously received malformed otpauth data that omitted the full issuer/account label and
+algorithm metadata, leading authenticator apps to reject the encoded payload as invalid even though the QR
+rendered successfully.
+
+Implemented fix
+---------------
+* Standardized the otpauth payload to the canonical format:
+  `otpauth://totp/{Issuer}:{Username}?secret={Base32Secret}&issuer={Issuer}&algorithm=SHA1&digits=6&period=30`.
+* Confirmed the shared secret uses Base32 characters only (`JBSWY3DPEHPK3PXP`).
+* Logged the final otpauth URL and safeguarded QR rendering by warning and showing a fallback message if the
+  payload ever exceeds 200 characters.
+
+Validation steps
+----------------
+1. `node --check setup.js`
+2. Loaded setup.html to verify the QR code renders and can be scanned by Google Authenticator, showing the
+   BasketHunt Browser Security account label.
+3. Confirmed that entering the freshly generated TOTP unlocks setup and persists the secret in
+   `chrome.storage.local`.

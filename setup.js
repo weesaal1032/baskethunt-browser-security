@@ -2,12 +2,13 @@ import { TOTP } from './vendor/jsotp.js';
 import { QRCode } from './vendor/qrcode.js';
 
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
-const QR_ACCOUNT_LABEL = 'BH Security';
-const QR_ISSUER = 'BH';
-const QR_MAX_PAYLOAD_BYTES = 62;
-const OTPAUTH_URL = `otpauth://totp/${encodeURIComponent(QR_ACCOUNT_LABEL)}?secret=${TOTP_SECRET}&issuer=${encodeURIComponent(
+const QR_ISSUER = 'BasketHunt Browser Security';
+const QR_ACCOUNT_NAME = 'User';
+const QR_MAX_PAYLOAD_LENGTH = 200;
+const OTPAUTH_LABEL = `${QR_ISSUER}:${QR_ACCOUNT_NAME}`;
+const OTPAUTH_URL = `otpauth://totp/${encodeURIComponent(OTPAUTH_LABEL)}?secret=${TOTP_SECRET}&issuer=${encodeURIComponent(
   QR_ISSUER
-)}`;
+)}&algorithm=SHA1&digits=6&period=30`;
 
 const totp = new TOTP({ digits: 6, period: 30, window: 1 });
 
@@ -20,7 +21,7 @@ const setupForm = document.getElementById('setup-form');
 function renderQrCode() {
   qrWrapper.innerHTML = '';
 
-  if (OTPAUTH_URL.length > QR_MAX_PAYLOAD_BYTES) {
+  if (OTPAUTH_URL.length > QR_MAX_PAYLOAD_LENGTH) {
     console.warn('Unable to render QR code: otpauth payload too long for embedded QR support', {
       length: OTPAUTH_URL.length,
     });
@@ -31,6 +32,7 @@ function renderQrCode() {
   }
 
   try {
+    console.log('Rendering authenticator QR with otpauth URL:', OTPAUTH_URL);
     new QRCode(qrWrapper, {
       text: OTPAUTH_URL,
       width: 220,
