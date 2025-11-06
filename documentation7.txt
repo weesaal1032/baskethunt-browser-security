@@ -1,7 +1,7 @@
 # Extension Architecture Overview
 
 ## High-Level Behavior
-- The Activity Tracker extension monitors user interaction across all tabs and enforces a lock after three minutes of inactivity.
+- The BasketHunt Browser Security extension monitors user interaction across all tabs and enforces a lock after three minutes of inactivity.
 - A background service worker manages alarms, persists lock state, and orchestrates the lock/unlock lifecycle using Chrome APIs.
 - A throttled content script emits user-activity heartbeats so the background worker can reset the inactivity timer when appropriate.
 - When the alarm fires, a dedicated lockscreen tab captures focus until a valid time-based one-time passcode (TOTP) is supplied.

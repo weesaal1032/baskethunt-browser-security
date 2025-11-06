@@ -1,0 +1,16 @@
+# QR Fix and Rebranding Notes
+
+## Issue Summary
+- The setup flow attempted to render a QR payload built from a verbose JSON blob, which exceeded the QR encoder's supported length and triggered the "Input too long for supported QR versions" error.
+
+## Fix Implemented
+- Replaced the oversized payload with a concise otpauth URI (`otpauth://totp/BasketHunt%20Browser%20Security:User?...`) generated from the fixed TOTP secret and issuer.
+- Added a defensive guard that checks the payload length before rendering; the UI now shows an inline fallback message and logs a console warning whenever data exceeds 200 characters instead of throwing.
+
+## Rebranding Updates
+- Updated the extension metadata, setup copy, and documentation references from the legacy names to "BasketHunt Browser Security" and the short name "BasketHunt Security" to align with the new branding brief.
+
+## Verification
+- `node --check setup.js` to confirm the module parses after the updates.
+- Manual review of setup.html to ensure the BasketHunt Browser Security QR guidance displays the new wording and fallback messaging.
+- Confirmed the otpauth URI length (\< 200 characters) so the QR code renders without errors in the embedded generator.
