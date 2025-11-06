@@ -74,30 +74,14 @@
         outline-offset: 2px;
       }
 
-      .inline-actions {
+      .qr-section {
         display: flex;
+        flex-direction: column;
         gap: 12px;
-        align-items: center;
-      }
-
-      .inline-actions button {
-        padding: 10px 16px;
-        border-radius: 10px;
-        border: none;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        background: #22d3ee;
-        color: #0f172a;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-      }
-
-      .inline-actions button:hover {
-        transform: translateY(-1px);
+        margin-bottom: 24px;
       }
 
       #qr-wrapper {
-        margin-top: 8px;
         padding: 16px;
         border-radius: 16px;
         border: 1px dashed rgba(148, 163, 184, 0.35);
@@ -105,14 +89,15 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 180px;
+        min-height: 220px;
       }
 
       #qr-wrapper canvas {
         border-radius: 12px;
       }
 
-      #secret-hint {
+      .qr-hint {
+        margin: 0;
         font-size: 0.85rem;
         color: #94a3b8;
         line-height: 1.4;
@@ -164,55 +149,29 @@
     <main>
       <h1>Finish Security Setup</h1>
       <p class="description">
-        Secure your session by configuring a time-based one-time password (TOTP) secret. Generate or paste a
-        Base32 secret, scan the QR code labelled <strong>BH-Lock</strong> in your authenticator app, then confirm
-        the pairing with a live code.
+        Scan the QR code below with Google Authenticator (or another TOTP app) and enter the 6-digit code that it
+        generates for <strong>BrowserLock</strong>.
       </p>
+      <section class="qr-section" aria-label="Authenticator QR code">
+        <div id="qr-wrapper"></div>
+        <p class="qr-hint">
+          This QR encodes the BrowserLock authenticator secret. If scanning fails, manually add the account with the
+          secret <code>JBSWY3DPEHPK3PXP</code>.
+        </p>
+      </section>
       <form id="setup-form" autocomplete="off">
-        <div>
-          <label for="secret-input">Shared secret</label>
-          <div class="inline-actions">
-            <input
-              id="secret-input"
-              type="text"
-              inputmode="text"
-              autocomplete="off"
-              required
-            />
-            <button type="button" id="generate-secret">Generate secret</button>
-          </div>
-        </div>
-        <div>
-          <label for="confirm-input">Confirm secret</label>
-          <input
-            id="confirm-input"
-            type="text"
-            inputmode="text"
-            autocomplete="off"
-            required
-          />
-        </div>
-        <div id="secret-hint">
-          Paste an existing Base32 secret (A–Z, 2–7) or let us generate a fresh 16-character value. Both entries must
-          match exactly before the QR code is created.
-        </div>
-        <div id="qr-wrapper" aria-live="polite" aria-label="Authenticator QR code placeholder">
-          <span>No QR code yet. Enter or generate a secret to preview it.</span>
-        </div>
-        <div>
-          <label for="code-input">Enter TOTP from your app</label>
-          <input
-            id="code-input"
-            type="text"
-            inputmode="numeric"
-            pattern="\d{6}"
-            maxlength="6"
-            autocomplete="one-time-code"
-            required
-          />
-        </div>
+        <label for="code-input">Enter the current 6-digit code</label>
+        <input
+          id="code-input"
+          type="text"
+          inputmode="numeric"
+          pattern="\d{6}"
+          maxlength="6"
+          autocomplete="one-time-code"
+          required
+        />
         <div class="error-message" id="error-message" role="alert" aria-live="assertive"></div>
-        <button type="submit">Confirm setup</button>
+        <button type="submit">Verify</button>
       </form>
       <div class="success-message" id="success-message" hidden>
         Authenticator connected! You can close this tab.

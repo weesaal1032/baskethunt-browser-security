@@ -1,0 +1,21 @@
+# BrowserLock Setup Flow Update
+
+## Overview
+The initial onboarding experience now guides every new installation through a fixed BrowserLock authenticator pairing.
+The setup screen renders a QR code for a predefined Base32 secret and only unlocks the extension after verifying a live
+6-digit TOTP that matches that secret.
+
+## setup.html
+- Replaced the secret entry form with a streamlined layout that displays the static QR code, brief scanning guidance,
+  and a single OTP input field with a "Verify" action.
+- Added a helper message that lists the hardcoded secret (`JBSWY3DPEHPK3PXP`) as a manual fallback if the QR scan fails.
+
+## setup.js
+- Hardcoded the BrowserLock otpauth URI (`otpauth://totp/BrowserLock:User?secret=JBSWY3DPEHPK3PXP&issuer=BrowserLock`)
+  and render the QR automatically on load with the bundled `qrcode.js` encoder.
+- Simplified the verification form so it sanitizes the OTP field, checks the code against the fixed secret via the
+  existing `jsotp` TOTP verifier, and blocks until a valid code is provided.
+- Persist the shared secret in `chrome.storage.local` after successful verification, notify the background worker, and
+  close the setup tab.
+- Preserve the existing short-circuit that immediately closes the page if a secret is already stored, preventing the
+  flow from rerunning after the first successful setup.
