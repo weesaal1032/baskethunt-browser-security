@@ -1,0 +1,10 @@
+# Chrome Extension Manifest Overview
+
+## Summary
+- Created a Manifest V3 configuration for a background service worker.
+- Configured a content script to track activity across all pages at `document_idle` for efficiency.
+- Declared required permissions: `storage`, `identity`, and `alarms`.
+- Included `<all_urls>` host permissions to allow the content script injection.
+
+## Files
+- `manifest.json`: Defines extension metadata, permissions, background worker, and content script injection rules.

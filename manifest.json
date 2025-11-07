@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "BasketHunt Browser Security",
+  "short_name": "BasketHunt Security",
+  "version": "1.0.0",
+  "description": "Secure your browsing environment with BasketHunt Browser Security. Includes authenticator setup and secure access control.",
+  "permissions": [
+    "storage",
+    "identity",
+    "alarms",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": ["<all_urls>"]
+}

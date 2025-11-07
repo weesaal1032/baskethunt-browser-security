@@ -1,0 +1,23 @@
+# documentation8.txt - First-Time Setup Flow
+
+## Purpose
+- Ensure every installation provisions a unique TOTP shared secret before the inactivity lock can operate.
+- Guide the user through generating (or pasting) a Base32 secret, scanning a QR code, and verifying the authenticator pairing.
+
+## Components
+- `setup.html`: Presents the onboarding UI, including secret inputs, QR preview area, authenticator code prompt, and contextual messaging.
+- `setup.js`: Handles secret normalization, Base32 generation (10 random bytes -> 16 characters), QR rendering, code verification, and persistence to `chrome.storage.local`.
+- `vendor/qrcode.js`: Embedded lightweight QR encoder that renders `otpauth://` URLs entirely client-side so secrets are never transmitted off-device.
+- `background.js`: Launches the setup tab on first install (or whenever the stored secret is absent) and pauses inactivity scheduling until setup completes.
+
+## User Journey
+1. When the extension is installed, the background service worker opens `setup.html` in a new tab if no TOTP secret exists.
+2. The user may paste an existing Base32 secret (characters A–Z, 2–7) or press **Generate secret** to create a 16-character value. Inputs are normalized/validated and must match before a QR code is shown.
+3. A QR code labelled **BH-Lock** is rendered via the local QR library. The user scans it with their authenticator app or manually enters the displayed secret.
+4. The user enters a live 6-digit TOTP from the authenticator. `setup.js` verifies it using `jsOTP`; failures keep the form enabled with inline feedback.
+5. On success, the secret is stored in `chrome.storage.local`, a confirmation banner appears, and the tab closes automatically after a short delay. The background worker resumes inactivity alarm scheduling.
+
+## Security Notes
+- Secrets never leave the browser: QR generation and verification are performed locally.
+- The setup tab is reopened if the stored secret is missing, preventing the lockscreen from running without a provisioned secret.
+- `lockscreen.js` refuses to accept codes if no secret is present, surfacing an administrator prompt instead of silently failing.
